@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -39,7 +39,7 @@ const empty = {
   condition: "",
   notes: "",
 };
-export default function DoctorDetailPage() {
+function DoctorDetailContent() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const [doctor, setDoctor] = useState<Doctor | null>(null);
@@ -297,5 +297,19 @@ export default function DoctorDetailPage() {
         )}
       </section>
     </div>
+  );
+}
+
+export default function DoctorDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-16 text-center text-sm text-slate-400">
+          Loading doctor profile…
+        </div>
+      }
+    >
+      <DoctorDetailContent />
+    </Suspense>
   );
 }
