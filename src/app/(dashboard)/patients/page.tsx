@@ -27,6 +27,7 @@ export default function PatientsPage() {
   const [search, setSearch] = useState("");
   const [condition, setCondition] = useState("");
   const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const debouncedSearch = useDebounce(search);
   const debouncedCondition = useDebounce(condition);
   const [editing, setEditing] = useState<string | null>(null);
@@ -45,6 +46,7 @@ export default function PatientsPage() {
             search: debouncedSearch || undefined,
             condition: debouncedCondition || undefined,
             startDate: startDate || undefined,
+            endDate: endDate || undefined,
           },
         });
         setPatients(data.data);
@@ -55,7 +57,7 @@ export default function PatientsPage() {
         setLoading(false);
       }
     },
-    [debouncedSearch, debouncedCondition, startDate],
+    [debouncedSearch, debouncedCondition, startDate, endDate],
   );
   useEffect(() => {
     void load(1);
@@ -98,7 +100,7 @@ export default function PatientsPage() {
           Search, filter, and manage your clinic’s patient records.
         </p>
       </header>
-      <section className="grid gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 sm:grid-cols-2 xl:grid-cols-[1.5fr_1fr_1fr]">
+      <section className="grid gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 sm:grid-cols-2 xl:grid-cols-[1.5fr_1fr_1fr_1fr]">
         <label className="relative">
           <Search
             size={17}
@@ -128,6 +130,18 @@ export default function PatientsPage() {
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
+            className="min-w-0 flex-1 py-2 text-sm text-slate-600 outline-none"
+          />
+        </label>
+        <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3.5">
+          <span className="shrink-0 text-xs font-semibold text-slate-400">
+            To
+          </span>
+          <input
+            aria-label="End date"
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
             className="min-w-0 flex-1 py-2 text-sm text-slate-600 outline-none"
           />
         </label>

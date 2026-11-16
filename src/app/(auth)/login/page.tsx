@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 import {
   Activity,
   ArrowRight,
@@ -14,8 +13,8 @@ import api from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@doctortracker.com");
-  const [password, setPassword] = useState("Password123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -24,7 +23,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const { data } = await api.post("/auth/login", { email, password });
-      Cookies.set("token", data.token, { expires: 7, sameSite: "lax" });
+      if (!data.user) throw new Error("Invalid login response");
       router.replace("/");
       router.refresh();
     } catch (err: unknown) {

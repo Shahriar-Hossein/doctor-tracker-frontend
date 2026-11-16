@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import Cookies from "js-cookie";
+import api from "@/lib/api";
 import {
   Activity,
   LayoutDashboard,
@@ -21,8 +21,8 @@ const links = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  function logout() {
-    Cookies.remove("token");
+  async function logout() {
+    await api.post("/auth/logout").catch(() => undefined);
     router.replace("/login");
     router.refresh();
   }

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import api from "@/lib/api";
+import Pagination from "@/components/Pagination";
 
 type Patient = {
   _id: string;
@@ -30,6 +31,7 @@ type Doctor = {
   email: string;
   phone: string;
   patients: Patient[];
+  pagination: { total: number; page: number; totalPages: number };
 };
 const empty = {
   name: "",
@@ -47,10 +49,14 @@ function DoctorDetailContent() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const load = useCallback(async () => {
+  const [patientPage, setPatientPage] = useState(1);
+  const load = useCallback(async (page = 1) => {
     try {
-      const { data } = await api.get(`/doctors/${id}`);
+      const { data } = await api.get(`/doctors/${id}`, {
+        params: { page, limit: 10 },
+      });
       setDoctor(data);
+      setPatientPage(data.pagination.page);
       setError("");
     } catch {
       setError("Unable to load this doctor profile.");
@@ -72,7 +78,7 @@ function DoctorDetailContent() {
         doctor: id,
       });
       setForm(empty);
-      await load();
+      await load(patientPage);
     } catch (err: unknown) {
       setError(
         (err as { response?: { data?: { message?: string } } }).response?.data
@@ -88,7 +94,7 @@ function DoctorDetailContent() {
       return;
     try {
       await api.delete(`/patients/${patientId}`);
-      await load();
+      await load(patientPage);
     } catch {
       setError("Could not remove this patient. Please try again.");
     }
@@ -145,7 +151,7 @@ function DoctorDetailContent() {
           </div>
           <div className="rounded-xl bg-slate-50 px-4 py-3 text-center">
             <p className="text-2xl font-bold text-slate-800">
-              {doctor.patients.length}
+              {doctor.pagination.total}
             </p>
             <p className="text-xs text-slate-400">Patients</p>
           </div>
@@ -295,6 +301,11 @@ function DoctorDetailContent() {
             No patients assigned yet.
           </div>
         )}
+        <Pagination
+          page={doctor.pagination.page}
+          totalPages={doctor.pagination.totalPages}
+          onPageChange={(page) => void load(page)}
+        />
       </section>
     </div>
   );

@@ -2,7 +2,15 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Plus, Search, Stethoscope, X } from "lucide-react";
+import {
+  ArrowRight,
+  Pencil,
+  Plus,
+  Search,
+  Stethoscope,
+  Trash2,
+  X,
+} from "lucide-react";
 import api from "@/lib/api";
 import { useDebounce } from "@/hooks/useDebounce";
 import Pagination from "@/components/Pagination";
@@ -32,7 +40,12 @@ export default function DoctorsPage() {
   });
   const [search, setSearch] = useState("");
   const query = useDebounce(search);
+  const [specialization, setSpecialization] = useState("");
+  const specializationQuery = useDebounce(specialization);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState(blank);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -42,7 +55,14 @@ export default function DoctorsPage() {
       setLoading(true);
       try {
         const { data } = await api.get("/doctors", {
-          params: { page, limit: 10, search: query || undefined },
+          params: {
+            page,
+            limit: 10,
+            search: query || undefined,
+            specialization: specializationQuery || undefined,
+            startDate: startDate || undefined,
+            endDate: endDate || undefined,
+          },
         });
         setDoctors(data.data);
         setPagination(data.pagination);
@@ -52,27 +72,54 @@ export default function DoctorsPage() {
         setLoading(false);
       }
     },
-    [query],
+    [query, specializationQuery, startDate, endDate],
   );
   useEffect(() => {
     void load(1);
   }, [load]);
-  async function addDoctor(event: FormEvent<HTMLFormElement>) {
+  async function saveDoctor(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setError("");
     try {
-      await api.post("/doctors", form);
+      if (editing) await api.patch(`/doctors/${editing}`, form);
+      else await api.post("/doctors", form);
       setForm(blank);
+      setEditing(null);
       setOpen(false);
       await load(1);
     } catch (err: unknown) {
       setError(
         (err as { response?: { data?: { message?: string } } }).response?.data
-          ?.message || "Could not add doctor. Check all fields and try again.",
+          ?.message || "Could not save doctor. Check all fields and try again.",
       );
     } finally {
       setBusy(false);
+    }
+  }
+  function editDoctor(doctor: Doctor) {
+    setError("");
+    setEditing(doctor._id);
+    setForm({
+      name: doctor.name,
+      specialization: doctor.specialization,
+      hospital: doctor.hospital,
+      email: doctor.email,
+      phone: doctor.phone,
+    });
+    setOpen(true);
+  }
+  async function deleteDoctor(doctor: Doctor) {
+    if (!window.confirm(`Delete ${doctor.name}? This cannot be undone.`)) return;
+    setError("");
+    try {
+      await api.delete(`/doctors/${doctor._id}`);
+      await load(pagination.page);
+    } catch (err: unknown) {
+      setError(
+        (err as { response?: { data?: { message?: string } } }).response?.data
+          ?.message || "Could not delete doctor. Please try again.",
+      );
     }
   }
   return (
@@ -88,6 +135,8 @@ export default function DoctorsPage() {
         <button
           onClick={() => {
             setError("");
+            setEditing(null);
+            setForm(blank);
             setOpen(true);
           }}
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-3 text-sm font-bold text-white hover:bg-teal-800"
@@ -95,18 +144,60 @@ export default function DoctorsPage() {
           <Plus size={17} /> Add doctor
         </button>
       </header>
-      <div className="relative max-w-md">
-        <Search
-          size={17}
-          className="absolute left-3.5 top-3.5 text-slate-400"
-        />
+      <div className="grid gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 sm:grid-cols-2 xl:grid-cols-4">
+        <label className="relative">
+          <Search
+            size={17}
+            className="absolute left-3.5 top-3.5 text-slate-400"
+          />
+          <input
+            aria-label="Search doctors"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Name, specialty, or hospital"
+            className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-600/10"
+          />
+        </label>
         <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search name, specialty, or hospital"
-          className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-600/10"
+          aria-label="Filter by specialization"
+          value={specialization}
+          onChange={(e) => setSpecialization(e.target.value)}
+          placeholder="Filter specialization"
+          className="rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none focus:border-teal-600 focus:ring-4 focus:ring-teal-600/10"
         />
+        <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3.5">
+          <span className="shrink-0 text-xs font-semibold text-slate-400">
+            From
+          </span>
+          <input
+            aria-label="Start date"
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="min-w-0 flex-1 py-2 text-sm text-slate-600 outline-none"
+          />
+        </label>
+        <label className="flex items-center gap-2 rounded-xl border border-slate-200 px-3.5">
+          <span className="shrink-0 text-xs font-semibold text-slate-400">
+            To
+          </span>
+          <input
+            aria-label="End date"
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="min-w-0 flex-1 py-2 text-sm text-slate-600 outline-none"
+          />
+        </label>
       </div>
+      {error && !open && (
+        <div
+          role="alert"
+          className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+        >
+          {error}
+        </div>
+      )}
       <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div>
@@ -161,12 +252,28 @@ export default function DoctorsPage() {
                   </td>
                   <td className="px-5 py-4 text-slate-600">{doctor.phone}</td>
                   <td className="px-5 py-4 text-right">
-                    <Link
-                      href={`/doctors/${doctor._id}`}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-teal-700 hover:text-teal-900"
-                    >
-                      View <ArrowRight size={14} />
-                    </Link>
+                    <div className="inline-flex items-center gap-3">
+                      <button
+                        onClick={() => editDoctor(doctor)}
+                        aria-label={`Edit ${doctor.name}`}
+                        className="text-slate-400 hover:text-teal-700"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        onClick={() => void deleteDoctor(doctor)}
+                        aria-label={`Delete ${doctor.name}`}
+                        className="text-slate-400 hover:text-rose-600"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      <Link
+                        href={`/doctors/${doctor._id}`}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-teal-700 hover:text-teal-900"
+                      >
+                        View <ArrowRight size={14} />
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -199,13 +306,13 @@ export default function DoctorsPage() {
           <div
             role="dialog"
             aria-modal="true"
-            aria-labelledby="add-doctor-heading"
+            aria-labelledby="doctor-form-heading"
             className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl"
           >
             <div className="mb-5 flex items-start justify-between">
               <div>
-                <h2 id="add-doctor-heading" className="text-lg font-bold">
-                  Add a doctor
+                <h2 id="doctor-form-heading" className="text-lg font-bold">
+                  {editing ? "Edit doctor" : "Add a doctor"}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
                   Add their profile to your care team.
@@ -227,7 +334,7 @@ export default function DoctorsPage() {
                 {error}
               </div>
             )}
-            <form onSubmit={addDoctor} className="grid gap-4 sm:grid-cols-2">
+            <form onSubmit={saveDoctor} className="grid gap-4 sm:grid-cols-2">
               {(
                 [
                   ["name", "Full name", "text"],
@@ -265,7 +372,7 @@ export default function DoctorsPage() {
                   disabled={busy}
                   className="rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
                 >
-                  {busy ? "Saving…" : "Save doctor"}
+                  {busy ? "Saving…" : editing ? "Save changes" : "Save doctor"}
                 </button>
               </div>
             </form>
