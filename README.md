@@ -58,13 +58,13 @@ The backend owns authentication, validation, doctor and patient records, and das
 
 ## Technical decisions
 
-### Separate Express API
+### Same-origin API proxy and HttpOnly session cookie
 
-The UI and API are separate applications, with the API owning database access and validation. This follows the standalone-server option in the project requirements and keeps the browser from connecting directly to MongoDB. A Next.js API proxy gives the browser one origin and stores the JWT in an HttpOnly cookie.
+The browser sends API requests to the Next.js application's `/api/*` route. The route forwards them to the Express service and stores the login JWT in an HttpOnly, same-site cookie. Keeping the token out of browser-readable storage reduces exposure to scripts running in the page, while the same-origin route avoids exposing the backend URL to client code and simplifies browser requests.
 
-### MongoDB aggregation and indexes
+### Page-local state with server-side filtering and pagination
 
-MongoDB aggregation computes dashboard summaries near the data, avoiding transfer of entire collections to the frontend. Doctor and patient list endpoints count and fetch matching records in parallel, apply server-side pagination, and use indexes for text search, dates, specialization, doctor assignment, and condition queries.
+Search, filters, forms, and pagination state live in the page that uses them instead of a global state store. Doctor and patient searches are debounced before requests are sent, and the API returns only the requested page plus pagination metadata. This keeps state close to its UI and avoids downloading full collections just to filter them in the browser.
 
 ## Visual evidence
 
