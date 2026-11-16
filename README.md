@@ -68,12 +68,35 @@ MongoDB aggregation computes dashboard summaries near the data, avoiding transfe
 
 ## Visual evidence
 
-Add current desktop and mobile screenshots here before submission:
+Screenshots are stored in `public/images/` and embedded below so they render on GitHub.
 
-- `docs/screenshots/dashboard-desktop.png`
-- `docs/screenshots/dashboard-mobile.png`
-- `docs/screenshots/doctors-desktop.png`
-- `docs/screenshots/patients-mobile.png`
+### Dashboard
+
+![Dashboard desktop view](public/images/dashboard.png)
+
+![Dashboard mobile view](public/images/dashboard-mobile.png)
+
+![Dashboard mobile view, alternate capture](public/images/dashboard-mobile-2.png)
+
+### Doctors
+
+![Doctors list desktop view](public/images/doctors.png)
+
+![Doctors list mobile view](public/images/doctors-mobile.png)
+
+![Doctor profile desktop view](public/images/doctor-profile.png)
+
+![Doctor profile mobile view](public/images/doctor-profile-mobile.png)
+
+![Doctor edit form](public/images/doctor-edit.png)
+
+### Patients
+
+![Patients list desktop view](public/images/patients.png)
+
+![Patients list mobile view](public/images/patients-mobile.png)
+
+![Patient edit form](public/images/patient-edit.png)
 
 ## API overview
 
